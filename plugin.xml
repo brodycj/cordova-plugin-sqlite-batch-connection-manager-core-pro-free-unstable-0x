@@ -1,0 +1,29 @@
+<plugin id="cordova-plugin-sqlite-batch-connection-manager-core-pro-free" version="0.0.1-dev">
+  <js-module src="www/sqlite-batch-connection-manager.js" name="sqliteBatchConnectionManager">
+    <runs/>
+  </js-module>
+  <platform name="android">
+    <config-file target="config.xml" parent="/*">
+      <feature name="SQLiteBatchConnectionManager">
+        <param name="android-package" value="io.sqlc.SQLiteBatchConnectionManager"/>
+      </feature>
+    </config-file>
+    <source-file src="src/android/SQLiteBatchConnectionManager.java" target-dir="src/io/sqlc"/>
+  </platform>
+  <platform name="ios">
+    <config-file target="config.xml" parent="/*">
+      <feature name="SQLiteBatchConnectionManager">
+        <param name="ios-package" value="SQLiteBatchConnectionManager"/>
+      </feature>
+    </config-file>
+    <source-file src="src/ios/SQLiteBatchConnectionManager.m"/>
+  </platform>
+  <platform name="osx">
+    <config-file target="config.xml" parent="/*">
+      <feature name="SQLiteBatchConnectionManager">
+        <param name="osx-package" value="SQLiteBatchConnectionManager"/>
+      </feature>
+    </config-file>
+    <source-file src="src/ios/SQLiteBatchConnectionManager.m"/>
+  </platform>
+</plugin>
