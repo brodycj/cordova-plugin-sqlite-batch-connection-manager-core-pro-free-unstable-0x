@@ -7,7 +7,7 @@ SQLITE_BATCH_CONNECTION_CORE_REMOTE := \
 SQLITE_BATCH_CONNECTION_CORE_ROOT := sqlite-batch-connection-core
 
 SQLITE_BATCH_CONNECTION_CORE_COMMIT_ID := \
-	ef408f62fc2b23ba630a8643d9a38490b4b719da
+	e9e5c7ede7142d276e22709c637d4e1262b928e8
 
 all:
 	echo 'all not supported' && exit 1
