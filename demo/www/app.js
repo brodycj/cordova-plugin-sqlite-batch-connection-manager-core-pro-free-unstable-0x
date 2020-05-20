@@ -51,4 +51,120 @@ function batchCallback (batchResults) {
   // show batch results in JSON string format (on all platforms)
   log('received batch results')
   log(JSON.stringify(batchResults))
+
+  window.sqliteBatchConnectionManager.openDatabaseConnection(
+    { fullName: ':memory:', flags: 2 },
+    openCallback2
+  )
+}
+
+function openCallback2 (connectionId) {
+  // 100 characters:
+  const BIG_DATA_PATTERN1 =
+    'abcdefghijklmnopqrstuvwxyz----' +
+    '1234567890123456789-' +
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ----' +
+    '1234567890123456789-'
+
+  const BIG_DATA_FACTOR = 200
+
+  const BIG_DATA_PATTERN2 = BIG_DATA_PATTERN1.repeat(BIG_DATA_FACTOR)
+
+  // Increasing this to 2000 seems to work on iOS & macOS ("osx")
+  // but can lead to OOM issue on Android at this point.
+  const MAX_ROW_COUNT = 1000
+
+  var rowCount = 0
+
+  log('START BIG DATA test')
+
+  window.sqliteBatchConnectionManager.executeBatch(
+    connectionId,
+    [['CREATE TABLE BIG (DATA)', []]],
+    addRow
+  )
+
+  function addRow () {
+    ++rowCount
+    window.sqliteBatchConnectionManager.executeBatch(
+      connectionId,
+      [
+        [
+          'INSERT INTO BIG VALUES (?)',
+          [BIG_DATA_PATTERN2 + (100000 + rowCount)]
+        ]
+      ],
+      function () {
+        if (rowCount < MAX_ROW_COUNT) addRow()
+        else checkBigData()
+      }
+    )
+  }
+
+  function checkBigData () {
+    log('CHECK info stored in BIG data table')
+    window.sqliteBatchConnectionManager.executeBatch(
+      connectionId,
+      [
+        ['SELECT COUNT(*) FROM BIG', []],
+        ['SELECT DATA FROM BIG', []],
+      ],
+      function (results) {
+        log('SELECT BIG DATA OK')
+        log('SELECT COUNT results: ' + JSON.stringify(results[0]))
+        log('SELECT BIG DATA rows length: ' + results[0].rows.length)
+        extraCheck1()
+      }
+    )
+  }
+
+  function extraCheck1 () {
+    log('EXTRA CHECK 1')
+    window.sqliteBatchConnectionManager.executeBatch(
+      connectionId,
+      [
+        ['SELECT COUNT(*) FROM BIG', []],
+        ['SELECT UPPER(?)', ['Extra test 1']],
+        ['SELECT DATA FROM BIG', []],
+        ['SELECT LOWER(?)', ['Extra test 2']]
+      ],
+      function (results) {
+        log('SELECT COUNT results: ' + JSON.stringify(results[0]))
+        log('EXTRA SELECT 1 result: ' + JSON.stringify(results[1]))
+        log('SELECT BIG DATA rows length: ' + results[2].rows.length)
+        log('EXTRA SELECT 2 result: ' + JSON.stringify(results[3]))
+        extraCheck2()
+      }
+    )
+  }
+
+  function extraCheck2 () {
+    log('EXTRA CHECK 2')
+    window.sqliteBatchConnectionManager.executeBatch(
+      connectionId,
+      [
+        ['SELECT COUNT(*) FROM BIG', []],
+        ['SELECT UPPER(?)', ['Extra test 1']],
+        ['SELECT DATA FROM BIG', []]
+      ],
+      function (results) {
+        log('SELECT COUNT results: ' + JSON.stringify(results[0]))
+        log('Extra test 1 result: ' + JSON.stringify(results[1]))
+        log('SELECT BIG DATA rows length: ' + results[2].rows.length)
+        extraCheck3()
+      }
+    )
+  }
+
+  function extraCheck3 () {
+    log('EXTRA CHECK 3')
+    window.sqliteBatchConnectionManager.executeBatch(
+      connectionId,
+      [['SELECT DATA FROM BIG', []]],
+      function (results) {
+        log('SELECT BIG DATA OK')
+        log('SELECT BIG DATA rows length: ' + results[0].rows.length)
+      }
+    )
+  }
 }
