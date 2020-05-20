@@ -1,0 +1,8 @@
+dist-dependencies
+sqlite-amalgamation-*
+sqlite-batch-connection-*
+demo/node_modules/
+demo/package-lock.json
+demo/platforms/
+demo/plugin/
+demo/plugins/
