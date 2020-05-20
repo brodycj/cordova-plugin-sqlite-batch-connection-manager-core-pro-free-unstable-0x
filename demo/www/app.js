@@ -70,9 +70,11 @@ function openCallback2 (connectionId) {
 
   const BIG_DATA_PATTERN2 = BIG_DATA_PATTERN1.repeat(BIG_DATA_FACTOR)
 
-  // Increasing this to 2000 seems to work on iOS & macOS ("osx")
-  // but can lead to OOM issue on Android at this point.
-  const MAX_ROW_COUNT = 1000
+  // Seems to be OK without the pro-free enhancements:
+  // const MAX_ROW_COUNT = 1000
+  // OK with pro-free enhancements,
+  // triggers OOM issue without the pro enhancements
+  const MAX_ROW_COUNT = 2000
 
   var rowCount = 0
 
