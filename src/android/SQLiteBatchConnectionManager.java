@@ -10,8 +10,8 @@ import org.json.JSONObject;
 
 public class SQLiteBatchConnectionManager extends CordovaPlugin {
   @Override
-  public boolean execute(String action, JSONArray data, CallbackContext cbc) {
-    switch(action) {
+  public boolean execute(String method, JSONArray data, CallbackContext cbc) {
+    switch(method) {
       case "openDatabaseConnection":
         openDatabaseConnection(data, cbc);
         break;
