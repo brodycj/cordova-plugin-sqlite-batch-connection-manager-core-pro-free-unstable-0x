@@ -350,6 +350,20 @@ public class SQLiteBatchConnectionManager extends CordovaPlugin {
 
       JSONArray data = args.getJSONArray(1);
 
+      // Background threading is under future consideration at this point
+      // (expected to be straightforward for both Android & iOS)
+      executeBatchNow(mydbc, data, cbc);
+    } catch(Exception e) {
+      // NOT EXPECTED - internal error:
+      cbc.error(e.toString());
+    }
+  }
+
+  static private void
+  executeBatchNow(final int mydbc, JSONArray data, CallbackContext cbc) {
+    try {
+      JSONArray results = new JSONArray();
+
       SQLiteBatchCore.executeBatch(mydbc,
         new BatchData(data),
         new BatchResults(data.length(), cbc));
