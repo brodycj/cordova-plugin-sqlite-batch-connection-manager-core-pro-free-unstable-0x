@@ -277,6 +277,60 @@ function continueBigDataMemoryTest (connectionId) {
         log('SELECT BIG DATA OK')
         log('SELECT COUNT results: ' + JSON.stringify(results[0]))
         log('SELECT BIG DATA rows length: ' + results[0].rows.length)
+        extraCheck1()
+      }
+    )
+  }
+
+  // extra checks are added to verify that SELECT BIG DATA is OK
+  // regardless of other statements in the same batch
+
+  function extraCheck1 () {
+    log('EXTRA CHECK 1')
+    window.sqliteBatchConnectionManager.executeBatch(
+      connectionId,
+      [
+        ['SELECT COUNT(*) FROM BIG', []],
+        ['SELECT UPPER(?)', ['Extra test 1']],
+        ['SELECT DATA FROM BIG', []],
+        ['SELECT LOWER(?)', ['Extra test 2']]
+      ],
+      function (results) {
+        log('SELECT COUNT results: ' + JSON.stringify(results[0]))
+        log('EXTRA SELECT 1 result: ' + JSON.stringify(results[1]))
+        log('SELECT BIG DATA rows length: ' + results[2].rows.length)
+        log('EXTRA SELECT 2 result: ' + JSON.stringify(results[3]))
+        extraCheck2()
+      }
+    )
+  }
+
+  function extraCheck2 () {
+    log('EXTRA CHECK 2')
+    window.sqliteBatchConnectionManager.executeBatch(
+      connectionId,
+      [
+        ['SELECT COUNT(*) FROM BIG', []],
+        ['SELECT UPPER(?)', ['Extra test 1']],
+        ['SELECT DATA FROM BIG', []]
+      ],
+      function (results) {
+        log('SELECT COUNT results: ' + JSON.stringify(results[0]))
+        log('Extra test 1 result: ' + JSON.stringify(results[1]))
+        log('SELECT BIG DATA rows length: ' + results[2].rows.length)
+        extraCheck3()
+      }
+    )
+  }
+
+  function extraCheck3 () {
+    log('EXTRA CHECK 3')
+    window.sqliteBatchConnectionManager.executeBatch(
+      connectionId,
+      [['SELECT DATA FROM BIG', []]],
+      function (results) {
+        log('SELECT BIG DATA OK')
+        log('SELECT BIG DATA rows length: ' + results[0].rows.length)
       }
     )
   }
