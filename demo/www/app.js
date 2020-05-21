@@ -10,18 +10,131 @@ function log (text) {
   console.log(text)
 }
 
-function onReady () {
-  log('deviceready event received')
+const DATABASE_FILE_NAME = 'demo.db'
 
+// SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+// ref: https://www.sqlite.org/c3ref/open.html
+const OPEN_DATABASE_FILE_FLAGS = 6
+
+// with 100 characters:
+const BIG_DATA_PATTERN_PART =
+  'abcdefghijklmnopqrstuvwxyz----' +
+  '1234567890123456789-' +
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ----' +
+  '1234567890123456789-'
+
+const BIG_DATA_PATTERN_FACTOR = 200
+
+// Seems to be OK without the pro-free enhancements:
+// const BIG_DATA_PATTERN_INSERT_COUNT = 1000
+// OK with the pro-free enhancements,
+// triggers OOM issue without the pro-free enhancements:
+const BIG_DATA_PATTERN_INSERT_COUNT = 2000
+
+function openMemoryDatabaseConnection (openCallback, errorCallback) {
   window.sqliteBatchConnectionManager.openDatabaseConnection(
     { fullName: ':memory:', flags: 2 },
-    openCallback
+    openCallback,
+    errorCallback
   )
 }
 
-function openCallback (connectionId) {
+function openFileDatabaseConnection (name, openCallback, errorCallback) {
+  window.sqliteStorageFile.resolveAbsolutePath(
+    {
+      name: name,
+      // TEMPORARY & DEPRECATED value, as needed for iOS & macOS ("osx"):
+      location: 2
+    },
+    function (path) {
+      log('database file path: ' + path)
+
+      window.sqliteBatchConnectionManager.openDatabaseConnection(
+        { fullName: path, flags: OPEN_DATABASE_FILE_FLAGS },
+        openCallback,
+        errorCallback
+      )
+    }
+  )
+}
+
+function openCacheFileDatabaseConnection (name, openCallback, errorCallback) {
+  window.resolveLocalFileSystemURL(
+    // portable across Android, iOS, & macOS ("osx"):
+    cordova.file.cacheDirectory,
+    function (entry) {
+      const dataDirectoryUrl = entry.toURL()
+
+      log('data directory url: ' + dataDirectoryUrl)
+
+      // hacky, working solution:
+      const path = dataDirectoryUrl.substring(7) + name
+
+      log('database cache file path: ' + path)
+
+      window.sqliteBatchConnectionManager.openDatabaseConnection(
+        { fullName: path, flags: OPEN_DATABASE_FILE_FLAGS },
+        openCallback,
+        errorCallback
+      )
+    }
+  )
+}
+
+function onReady () {
+  log('deviceready event received')
+  startMemoryDatabaseDemo()
+}
+
+function startMemoryDatabaseDemo () {
+  openMemoryDatabaseConnection(
+    function (id) {
+      log('memory database connection id: ' + id)
+
+      window.sqliteBatchConnectionManager.executeBatch(
+        id,
+        [['SELECT UPPER(?)', ['Text']]],
+        function (results) {
+          log(JSON.stringify(results))
+          startFileDatabaseDemo()
+        }
+      )
+    },
+    function (error) {
+      log('UNEXPECTED OPEN MEMORY DATABASE ERROR: ' + error)
+    }
+  )
+}
+
+function startFileDatabaseDemo () {
+  openFileDatabaseConnection(
+    DATABASE_FILE_NAME,
+    openDatabaseFileCallback,
+    function (e) {
+      log('UNEXPECTED OPEN ERROR: ' + e)
+    }
+  )
+}
+
+function openDatabaseFileCallback (connectionId) {
   log('open connection id: ' + connectionId)
 
+  // ERROR TEST - file name with incorrect flags:
+  window.sqliteBatchConnectionManager.openDatabaseConnection(
+    { fullName: 'dummy.db', flags: 0 },
+    function (_ignored) {
+      log('FAILURE - unexpected open success callback received')
+    },
+    function (e) {
+      log('OK - received error callback as expected for incorrect open call')
+
+      // CONTINUE with batch demo, with the correct connectionId:
+      batchDemo(connectionId)
+    }
+  )
+}
+
+function batchDemo (connectionId) {
   log('starting batch demo for connection id: ' + connectionId)
   window.sqliteBatchConnectionManager.executeBatch(
     connectionId,
@@ -52,33 +165,84 @@ function batchCallback (batchResults) {
   log('received batch results')
   log(JSON.stringify(batchResults))
 
-  window.sqliteBatchConnectionManager.openDatabaseConnection(
-    { fullName: ':memory:', flags: 2 },
-    openCallback2
+  startReaderDemo()
+}
+
+function startReaderDemo () {
+  openFileDatabaseConnection(
+    DATABASE_FILE_NAME,
+    function (id) {
+      log('read from another connection id: ' + id)
+
+      window.sqliteBatchConnectionManager.executeBatch(
+        id,
+        [['SELECT * FROM Testing', []]],
+        function (res) {
+          log(JSON.stringify(res))
+          startCacheFileDemo()
+        }
+      )
+    },
+    function (error) {
+      log('UNEXPECTED OPEN ERROR: ' + error)
+    }
   )
 }
 
-function openCallback2 (connectionId) {
-  // 100 characters:
-  const BIG_DATA_PATTERN1 =
-    'abcdefghijklmnopqrstuvwxyz----' +
-    '1234567890123456789-' +
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZ----' +
-    '1234567890123456789-'
+function startCacheFileDemo () {
+  openCacheFileDatabaseConnection(
+    DATABASE_FILE_NAME,
+    function (id) {
+      log('cache file database connection id: ' + id)
 
-  const BIG_DATA_FACTOR = 200
+      window.sqliteBatchConnectionManager.executeBatch(
+        id,
+        [
+          ['DROP TABLE IF EXISTS Testing', []],
+          ['CREATE TABLE Testing (data NOT NULL)', []],
+          ["INSERT INTO Testing VALUES ('test data')", []],
+          ['SELECT * FROM Testing', []]
+        ],
+        function (results) {
+          log(JSON.stringify(results))
+          startBigDataMemoryTest()
+        }
+      )
+    },
+    function (error) {
+      log('UNEXPECTED OPEN ERROR: ' + error)
+    }
+  )
+}
 
-  const BIG_DATA_PATTERN2 = BIG_DATA_PATTERN1.repeat(BIG_DATA_FACTOR)
+function startBigDataMemoryTest () {
+  log('START BIG DATA test')
 
-  // Seems to be OK without the pro-free enhancements:
-  // const MAX_ROW_COUNT = 1000
-  // OK with pro-free enhancements,
-  // triggers OOM issue without the pro enhancements
-  const MAX_ROW_COUNT = 2000
+  openMemoryDatabaseConnection(
+    function (connectionId) {
+      log('BIG DATA memory database test connection id: ' + connectionId)
+      continueBigDataMemoryTest(connectionId)
+    },
+    function (error) {
+      log('UNEXPECTED OPEN BIG DATA MEMORY DATABASE ERROR: ' + error)
+    }
+  )
+}
+
+function continueBigDataMemoryTest (connectionId) {
+  // A workaround is needed here since String.prototype.repeat()
+  // does not work on all supported Android versions
+  // at the time of adding this test.
+  // const BIG_DATA_PATTERN = BIG_DATA_PATTERN_PART.repeat(BIG_DATA_PATTERN_FACTOR)
+  var bigPattern = ''
+  for (var i = 0; i < BIG_DATA_PATTERN_FACTOR; ++i) {
+    bigPattern = bigPattern.concat(BIG_DATA_PATTERN_PART)
+  }
+  const BIG_DATA_PATTERN = bigPattern
 
   var rowCount = 0
 
-  log('START BIG DATA test')
+  log('INSERT BIG DATA')
 
   window.sqliteBatchConnectionManager.executeBatch(
     connectionId,
@@ -91,14 +255,14 @@ function openCallback2 (connectionId) {
     window.sqliteBatchConnectionManager.executeBatch(
       connectionId,
       [
-        [
-          'INSERT INTO BIG VALUES (?)',
-          [BIG_DATA_PATTERN2 + (100000 + rowCount)]
-        ]
+        ['INSERT INTO BIG VALUES (?)', [BIG_DATA_PATTERN + (100000 + rowCount)]]
       ],
       function () {
-        if (rowCount < MAX_ROW_COUNT) addRow()
-        else checkBigData()
+        if (rowCount < BIG_DATA_PATTERN_INSERT_COUNT) {
+          addRow()
+        } else {
+          checkBigData()
+        }
       }
     )
   }
@@ -109,7 +273,7 @@ function openCallback2 (connectionId) {
       connectionId,
       [
         ['SELECT COUNT(*) FROM BIG', []],
-        ['SELECT DATA FROM BIG', []],
+        ['SELECT DATA FROM BIG', []]
       ],
       function (results) {
         log('SELECT BIG DATA OK')

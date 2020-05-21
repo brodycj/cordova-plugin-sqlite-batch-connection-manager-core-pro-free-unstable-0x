@@ -14,7 +14,7 @@ all:
 
 build: clean fetch-dependencies update-dependencies build-dist-dependencies
 
-prepare-demo: build prepare-demo-plugin
+prepare-demo: build prepare-demo-plugins
 
 fetch-dependencies:
 	curl -O https://sqlite.org/2020/$(SQLITE_ZIP)
@@ -33,10 +33,10 @@ build-dist-dependencies:
 	cp $(SQLITE_BATCH_CONNECTION_CORE_ROOT)/ios/SQLiteBatchCore.[hm] dist-dependencies
 	cp $(SQLITE_AMALGAMATION)/sqlite3.* dist-dependencies
 
-prepare-demo-plugin:
+prepare-demo-plugins:
 	mkdir -p demo/plugin
 	cp -r dist-dependencies package.json plugin.xml src www demo/plugin
-	(cd demo && cordova plugin add ./plugin && cordova plugin ls)
+	(cd demo && cordova plugin add ./plugin cordova-plugin-file cordova-sqlite-storage-file && cordova plugin ls)
 	echo 'use Cordova to add desired platform to the demo before running'
 
 clean: clean-demo
