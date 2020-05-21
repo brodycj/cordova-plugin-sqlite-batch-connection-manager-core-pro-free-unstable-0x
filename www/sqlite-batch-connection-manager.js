@@ -13,13 +13,13 @@ function openDatabaseConnection (options, cb, errorCallback) {
 function executeBatch (connectionId, batchList, cb) {
   const batchLength = batchList.length
 
-  let results = []
+  var results = []
 
-  let isPartial = false
+  var isPartial = false
 
-  let partialResult = null
+  var partialResult = null
 
-  let partialRows = null
+  var partialRows = null
 
   function success (data) {
     if (isPartial) {
