@@ -2,12 +2,12 @@ SQLITE_AMALGAMATION := sqlite-amalgamation-3310100
 SQLITE_ZIP := $(SQLITE_AMALGAMATION).zip
 
 SQLITE_BATCH_CONNECTION_CORE_REMOTE := \
-	https://github.com/brodybits/sqlite-batch-connection-core-preview-2020-01
+	https://github.com/brodybits/sqlite-batch-connection-core-2020-01
 
 SQLITE_BATCH_CONNECTION_CORE_ROOT := sqlite-batch-connection-core
 
 SQLITE_BATCH_CONNECTION_CORE_COMMIT_ID := \
-	e9e5c7ede7142d276e22709c637d4e1262b928e8
+	bfcc81843252a381484d76ed30b1043d3c166c6d
 
 all:
 	echo 'all not supported' && exit 1
