@@ -284,6 +284,9 @@ function continueBigDataMemoryTest (connectionId) {
     )
   }
 
+  // extra checks are added to verify that SELECT BIG DATA is OK
+  // regardless of other statements in the same batch
+
   function extraCheck1 () {
     log('EXTRA CHECK 1')
     window.sqliteBatchConnectionManager.executeBatch(

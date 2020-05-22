@@ -43,6 +43,13 @@
 
 - (void) executeBatch: (CDVInvokedUrlCommand *) commandInfo
 {
+  // Background threading is under future consideration at this point
+  // (expected to be straightforward for both Android & iOS)
+  [self executeBatchNow: commandInfo];
+}
+
+- (void) executeBatchNow: (CDVInvokedUrlCommand *) commandInfo
+{
   NSArray * _args = commandInfo.arguments;
 
   const int connection_id = [(NSNumber *)[_args objectAtIndex: 0] intValue];
