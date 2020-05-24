@@ -202,7 +202,7 @@ public class SQLiteBatchConnectionManager extends CordovaPlugin {
     @Override
     public void putNewEntryWithRows() {
       try {
-        if (this.jsonRowsRoughSize < JSON_RESULTS_ROUGH_CUTOFF_SIZE) {
+        if ((this.jsonResultsRoughSize + this.jsonRowsRoughSize) < JSON_RESULTS_ROUGH_CUTOFF_SIZE) {
           // String.join() seems to be not working on
           // all supported Android versions
           String jsonResult =
