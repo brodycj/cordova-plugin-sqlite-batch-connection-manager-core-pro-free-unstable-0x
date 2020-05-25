@@ -16,6 +16,19 @@ const DATABASE_FILE_NAME = 'demo.db'
 // ref: https://www.sqlite.org/c3ref/open.html
 const OPEN_DATABASE_FILE_FLAGS = 6
 
+// with 100 characters:
+const BIG_DATA_PATTERN_PART =
+  'abcdefghijklmnopqrstuvwxyz----' +
+  '1234567890123456789-' +
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ----' +
+  '1234567890123456789-'
+
+const BIG_DATA_PATTERN_FACTOR = 200
+
+// Increasing this to 2000 seems to work on iOS & macOS ("osx")
+// but can lead to OOM issue on Android at this point.
+const BIG_DATA_PATTERN_INSERT_COUNT = 1000
+
 function openMemoryDatabaseConnection (openCallback, errorCallback) {
   window.sqliteBatchConnectionManager.openDatabaseConnection(
     { fullName: ':memory:', flags: 2 },
@@ -190,6 +203,7 @@ function startCacheFileDemo () {
         ],
         function (results) {
           log(JSON.stringify(results))
+          startBigDataMemoryTest()
         }
       )
     },
@@ -197,4 +211,73 @@ function startCacheFileDemo () {
       log('UNEXPECTED OPEN ERROR: ' + error)
     }
   )
+}
+
+function startBigDataMemoryTest () {
+  log('START BIG DATA test')
+
+  openMemoryDatabaseConnection(
+    function (connectionId) {
+      log('BIG DATA memory database test connection id: ' + connectionId)
+      continueBigDataMemoryTest(connectionId)
+    },
+    function (error) {
+      log('UNEXPECTED OPEN BIG DATA MEMORY DATABASE ERROR: ' + error)
+    }
+  )
+}
+
+function continueBigDataMemoryTest (connectionId) {
+  // A workaround is needed here since String.prototype.repeat()
+  // does not work on all supported Android versions
+  // at the time of adding this test.
+  // const BIG_DATA_PATTERN = BIG_DATA_PATTERN_PART.repeat(BIG_DATA_PATTERN_FACTOR)
+  var bigPattern = ''
+  for (var i = 0; i < BIG_DATA_PATTERN_FACTOR; ++i) {
+    bigPattern = bigPattern.concat(BIG_DATA_PATTERN_PART)
+  }
+  const BIG_DATA_PATTERN = bigPattern
+
+  var rowCount = 0
+
+  log('INSERT BIG DATA')
+
+  window.sqliteBatchConnectionManager.executeBatch(
+    connectionId,
+    [['CREATE TABLE BIG (DATA)', []]],
+    addRow
+  )
+
+  function addRow () {
+    ++rowCount
+    window.sqliteBatchConnectionManager.executeBatch(
+      connectionId,
+      [
+        ['INSERT INTO BIG VALUES (?)', [BIG_DATA_PATTERN + (100000 + rowCount)]]
+      ],
+      function () {
+        if (rowCount < BIG_DATA_PATTERN_INSERT_COUNT) {
+          addRow()
+        } else {
+          checkBigData()
+        }
+      }
+    )
+  }
+
+  function checkBigData () {
+    log('CHECK info stored in BIG data table')
+    window.sqliteBatchConnectionManager.executeBatch(
+      connectionId,
+      [
+        ['SELECT COUNT(*) FROM BIG', []],
+        ['SELECT DATA FROM BIG', []]
+      ],
+      function (results) {
+        log('SELECT BIG DATA OK')
+        log('SELECT COUNT results: ' + JSON.stringify(results[0]))
+        log('SELECT BIG DATA rows length: ' + results[1].rows.length)
+      }
+    )
+  }
 }
