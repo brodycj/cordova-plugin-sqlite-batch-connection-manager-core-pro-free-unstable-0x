@@ -1,4 +1,4 @@
-<plugin id="cordova-plugin-sqlite-batch-connection-manager-core" version="0.0.1-dev">
+<plugin id="cordova-plugin-sqlite-batch-connection-manager-core-pro-free" version="0.0.1-dev">
   <js-module src="www/sqlite-batch-connection-manager.js" name="sqliteBatchConnectionManager">
     <runs/>
   </js-module>
