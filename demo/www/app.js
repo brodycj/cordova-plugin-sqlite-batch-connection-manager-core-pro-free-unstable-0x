@@ -25,9 +25,11 @@ const BIG_DATA_PATTERN_PART =
 
 const BIG_DATA_PATTERN_FACTOR = 200
 
-// Increasing this to 2000 seems to work on iOS & macOS ("osx")
-// but can lead to OOM issue on Android at this point.
-const BIG_DATA_PATTERN_INSERT_COUNT = 1000
+// Seems to be OK without the pro-free enhancements:
+// const BIG_DATA_PATTERN_INSERT_COUNT = 1000
+// OK with the pro-free enhancements,
+// triggers OOM issue without the pro-free enhancements:
+const BIG_DATA_PATTERN_INSERT_COUNT = 2000
 
 function openMemoryDatabaseConnection (openCallback, errorCallback) {
   window.sqliteBatchConnectionManager.openDatabaseConnection(
