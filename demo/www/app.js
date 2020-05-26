@@ -2,12 +2,17 @@
 
 document.addEventListener('deviceready', onReady)
 
-function log (text) {
+function logData (text) {
   // log into the `messages` div:
   document.getElementById('messages').appendChild(document.createTextNode(text))
   document.getElementById('messages').appendChild(document.createElement('br'))
   // and to the console
   console.log(text)
+}
+
+function log (text) {
+  logData(new Date().toString())
+  logData(text)
 }
 
 const DATABASE_FILE_NAME = 'demo.db'
