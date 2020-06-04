@@ -4,6 +4,9 @@ package io.sqlc;
 
 import java.util.Vector;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
@@ -351,9 +354,11 @@ public class SQLiteBatchConnectionManager extends CordovaPlugin {
 
       JSONArray data = args.getJSONArray(1);
 
-      // Background threading is under future consideration at this point
-      // (expected to be straightforward for both Android & iOS)
-      executeBatchNow(mydbc, data, cbc);
+      threadPool.execute(new Runnable() {
+        public void run() {
+          executeBatchNow(mydbc, data, cbc);
+        }
+      });
     } catch(Exception e) {
       // NOT EXPECTED - internal error:
       cbc.error(e.toString());
@@ -373,4 +378,12 @@ public class SQLiteBatchConnectionManager extends CordovaPlugin {
       cbc.error(e.toString());
     }
   }
+
+  static {
+    threadPool = Executors.newCachedThreadPool();
+  }
+
+  // This is really an instance of ExecutorService,
+  // but only execute from Executor is needed here.
+  static private Executor threadPool;
 }
