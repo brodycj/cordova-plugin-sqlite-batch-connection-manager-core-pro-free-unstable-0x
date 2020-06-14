@@ -190,6 +190,26 @@ function startCacheFileDemo () {
         ],
         function (results) {
           log(JSON.stringify(results))
+          u0000Character()
+        }
+      )
+    },
+    function (error) {
+      log('UNEXPECTED OPEN ERROR: ' + error)
+    }
+  )
+}
+
+function u0000Character () {
+  openMemoryDatabaseConnection(
+    function (id) {
+      log('memory database connection id for u0000 character: ' + id)
+      window.sqliteBatchConnectionManager.executeBatch(
+        id,
+        [['SELECT HEX(?)', ['abc\u0001\u0000def']]],
+        function (results) {
+          log(JSON.stringify(results))
+          startBigDataMemoryTest()
         }
       )
     },
