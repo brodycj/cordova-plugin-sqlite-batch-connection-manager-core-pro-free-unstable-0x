@@ -34,13 +34,13 @@ build-dist-dependencies:
 	cp $(SQLITE_AMALGAMATION)/sqlite3.* dist-dependencies
 
 prepare-demo-plugins:
-	mkdir -p demo/plugin
-	cp -r dist-dependencies package.json plugin.xml src www demo/plugin
-	(cd demo && cordova plugin add ./plugin cordova-plugin-file cordova-sqlite-storage-file && cordova plugin ls)
+	mkdir -p demo/local-plugin
+	cp -r dist-dependencies package.json plugin.xml src www demo/local-plugin
+	(cd demo && cordova plugin add ./local-plugin cordova-plugin-file cordova-sqlite-storage-file && cordova plugin ls)
 	echo 'use Cordova to add desired platform to the demo before running'
 
 clean: clean-demo
 	rm -rf sqlite-amalgamation-* sqlite-batch-connection-* dist-dependencies
 
 clean-demo:
-	rm -rf demo/node_modules demo/package-lock.json demo/plugin demo/plugins demo/platforms
+	rm -rf demo/node_modules demo/package-lock.json demo/local-plugin demo/plugins demo/platforms
