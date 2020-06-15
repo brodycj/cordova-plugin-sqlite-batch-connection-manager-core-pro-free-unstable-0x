@@ -5,15 +5,21 @@ package io.sqlc;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import org.apache.cordova.CallbackContext;
+import java.util.Vector;
+
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CallbackContext;
+import org.apache.cordova.PluginResult;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class SQLiteBatchConnectionManager extends CordovaPlugin {
-  static class JSONBatchData implements SQLiteBatchCore.BatchData {
-    JSONBatchData (JSONArray data) {
+  // starting with *conservative* cutoff size of 5MB
+  static private final int JSON_RESULTS_ROUGH_CUTOFF_SIZE = 5*1000*1000;
+
+  static class BatchData implements SQLiteBatchCore.BatchData {
+    BatchData (JSONArray data) {
       this.data = data;
     }
 
@@ -109,9 +115,12 @@ public class SQLiteBatchConnectionManager extends CordovaPlugin {
     JSONArray bind;
   }
 
-  static class JSONBatchResults implements SQLiteBatchCore.BatchResults {
-    JSONBatchResults(JSONArray results) {
-      this.results = results;
+  static class BatchResults implements SQLiteBatchCore.BatchResults {
+    BatchResults(int totalResultCount, CallbackContext cbc) {
+      this.totalResultCount = totalResultCount;
+      this.cbc = cbc;
+      this.jsonResults = new Vector<String>(totalResultCount);
+      this.jsonResultsRoughSize = 0;
     }
 
     @Override
@@ -141,14 +150,20 @@ public class SQLiteBatchConnectionManager extends CordovaPlugin {
 
     @Override
     public void putNewEntry() {
-      results.put(result);
+      String jsonResult = this.result.toString();
+
+      this.jsonResults.add(jsonResult);
+      this.jsonResultsRoughSize += jsonResult.length();
+      ++this.resultCount;
+      if (this.resultCount == this.totalResultCount) this.sendResults();
     }
 
     @Override
     public void startNewEntryWithRows() {
       result = new JSONObject();
       columns = new JSONArray();
-      rows = new JSONArray();
+      this.jsonRows = new Vector<String>();
+      this.jsonRowsRoughSize = 0;
     }
 
     @Override
@@ -183,27 +198,116 @@ public class SQLiteBatchConnectionManager extends CordovaPlugin {
 
     @Override
     public void entryPutRow() {
-      rows.put(row);
+      String jsonRow = this.row.toString();
+      this.jsonRows.add(jsonRow);
+      this.jsonRowsRoughSize += jsonRow.length();
     }
 
     @Override
     public void putNewEntryWithRows() {
       try {
+        if ((this.jsonResultsRoughSize + this.jsonRowsRoughSize) < JSON_RESULTS_ROUGH_CUTOFF_SIZE) {
+          // String.join() seems to be not working on
+          // all supported Android versions
+          String jsonResult =
+            "{" +
+            "\"status\"" + ":" + "0" + "," +
+            "\"columns\"" + ":" + columns.toString() + ","+
+            "\"rows\"" + ":" + this.jsonRows +
+            "}";
+
+          this.jsonResults.add(jsonResult);
+          this.jsonResultsRoughSize += jsonResult.length();
+          ++this.resultCount;
+          if (this.resultCount == this.totalResultCount) this.sendResults();
+
+          return;
+        }
+
+        // else ...
+
+        this.sendResults();
+
+        final int rowsLength = jsonRows.size();
+
         result.put("status", 0); // SQLite OK
+        result.put("partial", 1);
         result.put("columns", columns);
-        result.put("rows", rows);
-        results.put(result);
+        result.put("rowsLength", rowsLength);
+
+        ++resultCount;
+        PluginResult pr = new PluginResult(PluginResult.Status.OK, result);
+        pr.setKeepCallback(true);
+        cbc.sendPluginResult(pr);
+
+        for (int i=0; i<rowsLength; ++i) {
+          pr = new JSONPluginResult(jsonRows.get(i));
+          if (resultCount != totalResultCount || i < rowsLength)
+            pr.setKeepCallback(true);
+          cbc.sendPluginResult(pr);
+        }
       } catch(Exception e) {
         // NOT EXPECTED - internal error:
         throw new RuntimeException(e);
       }
     }
 
-    JSONArray results;
+    private void sendResults() {
+      int sendCount = this.jsonResults.size();
+
+      StringBuilder jsonBuilder = new StringBuilder();
+      jsonBuilder.append('[');
+      for (int i=0; i < sendCount; ++i) {
+        if (i != 0) jsonBuilder.append(',');
+        jsonBuilder.append(this.jsonResults.get(i));
+      }
+      jsonBuilder.append(']');
+
+      PluginResult pr = new JSONPluginResult(jsonBuilder.toString());
+      if (this.resultCount != this.totalResultCount) pr.setKeepCallback(true);
+      cbc.sendPluginResult(pr);
+
+      this.jsonResults = new Vector<String>(totalResultCount);
+      this.jsonResultsRoughSize = 0;
+    }
+
+    private class JSONPluginResult extends PluginResult {
+      JSONPluginResult(String json) {
+        super(PluginResult.Status.OK);
+        this.jsonString = json;
+      }
+
+      @Override
+      public int getMessageType() {
+        return PluginResult.MESSAGE_TYPE_JSON;
+      }
+
+      @Override
+      public String getMessage() {
+        return jsonString;
+      }
+
+      private String jsonString;
+    }
+
+    int totalResultCount;
+
+    CallbackContext cbc;
+
+    int resultCount;
+
+    Vector<String> jsonResults;
+
+    int jsonResultsRoughSize;
+
     JSONObject result;
 
     JSONArray columns;
-    JSONArray rows;
+
+    Vector<String> jsonRows;
+
+    int jsonRowsRoughSize;
+
     JSONArray row;
   }
 
@@ -267,10 +371,8 @@ public class SQLiteBatchConnectionManager extends CordovaPlugin {
       JSONArray results = new JSONArray();
 
       SQLiteBatchCore.executeBatch(mydbc,
-        new JSONBatchData(data),
-        new JSONBatchResults(results));
-
-      cbc.success(results);
+        new BatchData(data),
+        new BatchResults(data.length(), cbc));
     } catch(Exception e) {
       // NOT EXPECTED - internal error:
       cbc.error(e.toString());
