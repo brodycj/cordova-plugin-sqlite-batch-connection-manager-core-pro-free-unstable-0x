@@ -2,9 +2,9 @@ SQLITE_AMALGAMATION := sqlite-amalgamation-3320200
 SQLITE_ZIP := $(SQLITE_AMALGAMATION).zip
 
 SQLITE_BATCH_CONNECTION_CORE_REMOTE := \
-	https://github.com/brodybits/sqlite-batch-connection-core-2020-01
+	https://github.com/brodybits/sqlite-batch-connection-core-pro-free-2020-01
 
-SQLITE_BATCH_CONNECTION_CORE_ROOT := sqlite-batch-connection-core
+SQLITE_BATCH_CONNECTION_CORE_ROOT := sqlite-batch-connection-core-pro-free
 
 SQLITE_BATCH_CONNECTION_CORE_COMMIT_ID := \
 	603b806014689e15e071a1ded0ae551ca442db7d
