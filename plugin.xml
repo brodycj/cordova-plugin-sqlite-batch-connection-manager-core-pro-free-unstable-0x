@@ -70,6 +70,10 @@
     <header-file src="dist-dependencies/sqlite-connection-core.h" />
     <source-file src="dist-dependencies/sqlite-connection-core.c" />
     <podspec>
+      <!-- empty config element to avoid an installation bug on iOS -->
+      <!-- (not needed for "osx" (macOS) platform) ) -->
+      <config>
+      </config>
       <pods>
         <!-- XXX MISSING EXTRA-SAFE -DSQLITE_DEFAULT_SYNCHRONOUS=3 FLAG
              AND MISSING SOME OTHER FLAGS FROM ABOVE
