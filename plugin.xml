@@ -43,7 +43,7 @@
         <!-- XXX MISSING EXTRA-SAFE -DSQLITE_DEFAULT_SYNCHRONOUS=3 FLAG
              AND MISSING SOME OTHER FLAGS FROM ABOVE
              FUTURE TBD CONSIDER SOME OTHER SQLITE FEATURE FLAGS WANTED -->
-        <pod name="sqlite3" spec="~> 3.32.2" />
+        <pod name="sqlite3" spec="~> 3.32.3" />
       </pods>
     </podspec>
   </platform>
@@ -78,7 +78,7 @@
         <!-- XXX MISSING EXTRA-SAFE -DSQLITE_DEFAULT_SYNCHRONOUS=3 FLAG
              AND MISSING SOME OTHER FLAGS FROM ABOVE
              FUTURE TBD CONSIDER SOME OTHER SQLITE FEATURE FLAGS WANTED -->
-        <pod name="sqlite3" spec="~> 3.32.2" />
+        <pod name="sqlite3" spec="~> 3.32.3" />
       </pods>
     </podspec>
   </platform>
