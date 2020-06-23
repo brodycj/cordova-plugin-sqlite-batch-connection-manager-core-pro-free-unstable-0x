@@ -36,7 +36,6 @@
     <source-file src="dist-dependencies/sqlite-connection-core.c" />
     <podspec>
       <!-- empty config element to avoid an installation bug on iOS -->
-      <!-- (not needed for "osx" (macOS) platform) ) -->
       <config>
       </config>
       <pods>
@@ -56,7 +55,9 @@
     <source-file src="src/ios/SQLiteBatchConnectionManager.m"/>
     <header-file src="dist-dependencies/SQLiteBatchCore.h" />
     <source-file src="dist-dependencies/SQLiteBatchCore.m" />
-    <!-- XXX TBD GONE (TODO UPDATE podspec TO BUILD WITH THE FLAGS BELOW)
+    <header-file src="dist-dependencies/sqlite-connection-core.h" />
+    <source-file src="dist-dependencies/sqlite-connection-core.c" />
+    <!-- NOTE that podspec is not supported by cordova-osx -->
     <header-file src="dist-dependencies/sqlite3.h" />
     <source-file
       src="dist-dependencies/sqlite3.c"
@@ -66,20 +67,5 @@
         -DHAVE_USLEEP
         -DHAVE_UTIME
         " />
-    - -->
-    <header-file src="dist-dependencies/sqlite-connection-core.h" />
-    <source-file src="dist-dependencies/sqlite-connection-core.c" />
-    <podspec>
-      <!-- empty config element to avoid an installation bug on iOS -->
-      <!-- (not needed for "osx" (macOS) platform) ) -->
-      <config>
-      </config>
-      <pods>
-        <!-- XXX MISSING EXTRA-SAFE -DSQLITE_DEFAULT_SYNCHRONOUS=3 FLAG
-             AND MISSING SOME OTHER FLAGS FROM ABOVE
-             FUTURE TBD CONSIDER SOME OTHER SQLITE FEATURE FLAGS WANTED -->
-        <pod name="sqlite3" spec="~> 3.32.3" />
-      </pods>
-    </podspec>
   </platform>
 </plugin>
